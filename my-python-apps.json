@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "my-python-apps-348119",
+  "private_key_id": "5f047d8b9be76d561e8263e09cb25a6b99f19002",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCK6Hax4jOfOiO7\nxeRI7XOLeuF3GKqlL824uf7a6Qgu8P/YXSXPUElzKPDF089CLA1u+BcukPZqZehV\nlPa1bUlcUgDY5VUZ9wBxgiYcHRbudGRCk6TMh1vfmcHs24HtnbVubBpz3XS1KmdF\na+AEgy2+wgx7tkmk6n85G529LJjlm9TqdSIMDiLwOm5f+NFgahgIyP7fiyxVC6Yw\nkb8yskPg2j81QDyRrjVsm5EbhvNNIrRDin1QJtcFWLXj28ae+br3B2mHSuVGVNgk\n0hD/+j5xjfR7j/kd8TAyxqerqupAJvOJ1qrYxm0HyVp/FQnz9XP42VcYWjpVnBlL\nALyMaS9fAgMBAAECggEACye1+H0Q5jWWDwtKVOz0vXvFxXmuootfOvl81Pmn1ZU3\nBpocYjSxYVUlWM20tDyza3jy66NqlorOiKjo0xMOtCJFvSVVmzsxxuvLwbA4Wjfw\noUQYFPC92QwQ/cN3AK0Ml+yIh0t+htn75yBNoi8iqlINDJZL/blzNBParAl70dx+\nhydaTyKBJBqTMsXE6WdBuRNl42W69+Lv3zi2fpy8uqWisqsDcNPCbdyF/FnyUyTp\niUAfB1jVUWEgR+K8j7pEjPdi31aAafIxIafLnI95e+ikkwHBCMCzITg0o6ESP+e2\nFOY3rGKgyyT1J2ZaEW4p6C689BcU0v/UqXDPIUynwQKBgQC/hyzS+0ElLES2sh84\nngAo9vGcLW9ESXLs7mg7k9HdapVNJDUrbKiv4VAqnAoUCyyuWGghbYpCyYwmOKJS\nl2edSFWOFKW9OiOMP06lJepKVjghDF5ys3z58XKNH1puPAk0Sbl0BKbU6SbbxUJj\nxUImvoWVGybrGhIkktudqIIlPwKBgQC5qsqMVITLPvzm2CttUHBMvKoNrjAGtUM5\nRmoGynKyeEtl6m+ahA6nXk2xp7eyBEWqLDuwAxxgXxdW88vwh3UcsrwtUyfqsGBt\nIEabQoo8awD4wmcsskL+FAbqpPDo7OqHPAOA7cqb4EnbFCAcu3UfGVEf4BxzwiWH\nHe29Kg3N4QKBgHOcnSoeEIzn0/KUQtRiS6ZuqhmkM239CCqNHs4XxK7rD4SpPo8f\n4BOK5mFSH6NJu4biRrkm7jaygq7vsMw6KImAiGRjgkhfN+YIsOhvoqWMtgT8+mYy\nglY9sPAO5P91rfiqKBAoXqxWsOYohJLFF9FbYDdJVIzGB/2byIW6mhTxAoGBAKtk\n+bQPtcK2M9qaRYSVFAYSx9z3JsiafiMaWHhKXRVZrSi5ASufqrNgf9J3ZEFGZlUQ\nnkz+oixou+/+AQ7azQagDMy+jgO9rFYwzF05UMkzcmMxevMs4GESdcwYVXiAdIRA\np29WlInOw/8klfxQJG9//H6zcTB/UgtoWnYcoz+hAoGAPFe/VsoCgWkfmBYucqJp\nfYZNSCVLuAkeRoTTHRL3JSd4BmkOnKVsi3YCQFmeSPILRj0j71nUyJyUQg6Huug0\nbGSshe5hDUxOvc7xorF/2OoaUTt1MSkXLGO84UdycNxuiv+Y/ekQBob9mD4lBjoK\nJtw5y7zjnhhYnUyfze6C3OQ=\n-----END PRIVATE KEY-----\n",
+  "client_email": "my-python-apps-348119@appspot.gserviceaccount.com",
+  "client_id": "117830022843391154081",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/my-python-apps-348119%40appspot.gserviceaccount.com"
+}
