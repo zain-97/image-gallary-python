@@ -37,6 +37,8 @@ def root():
     user_info = None
     gallery_list = []
 
+    session["gallery"] = None
+
     if id_token:
         try:
             claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
@@ -123,7 +125,8 @@ def gotoGallery():
         try:
 
             gallery_name = request.args.get('gallery_name');
-
+            session["gallery"] = gallery_name
+            
             if len(gallery_name) == 0:
                 session['error_message'] = "Invalid gallery url"
                 return('/')
@@ -186,7 +189,7 @@ def gotoGallery():
         gallery_name=gallery_name
     )
 
-@app.route('/delete_directory', methods=['POST'])
+@app.route('/delete_gallery', methods=['POST'])
 def deleteGalleryHandler():
     id_token = request.cookies.get("token")
     claims = None
@@ -194,7 +197,7 @@ def deleteGalleryHandler():
     if id_token:
         try:
             claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
-            gallery_name = request.form['dir_name']
+            gallery_name = request.form['gallery_name']
 
             if gallery_name == '':
                 session['error_message'] = "Invalid gallery name"
@@ -203,8 +206,11 @@ def deleteGalleryHandler():
             if gallery_name[len(gallery_name) - 1] != '/':
                 gallery_name = gallery_name+"/"
 
-            user_info = retrieveUserInfo(claims)
-            deleteGallery(gallery_name, user_info)
+            if claims['user_id'] not in gallery_name:
+                session['error_message'] = "Invalid operation"
+                return redirect('/')
+
+            deleteGallery(gallery_name)
             session['success_message'] = "Gallery deleted"
         
         except ValueError as exc:
@@ -241,6 +247,7 @@ def uploadFileHandler():
             session['error_message'] = str(exc)
 
     return redirect('/gallery?gallery_name='+gallery_name)
+
 
 @app.route('/delete_file', methods=['post'])
 def deleteFileHandler():
@@ -334,12 +341,6 @@ def deleteFile(file_name):
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(file_name)
     blob.delete()
-
-def downloadBlob(filename):
-    storage_client = storage.Client(project=local_constants.PROJECT_NAME)
-    bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
-    blob = bucket.blob(filename)
-    return blob.download_as_bytes()
 
 def blobList(prefix):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
