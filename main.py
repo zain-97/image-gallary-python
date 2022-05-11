@@ -28,16 +28,25 @@ app.secret_key = "mysecretkey" #secret key for flask session
 datastore_client = datastore.Client()
 firebase_request_adapter = requests.Request()
 
+
+# The root route/landing page
+# template variables
+# user_data: firebase user auth object
+# error_message: session error message
+# success_message: session success message
+# user_info: basic user info
+# gallery_list: array of galleries of the loggedin user
+# storage_size: the calculated size of the uploaded images
 @app.route('/')
 def root():
     id_token = request.cookies.get("token")
-    error_message = None
-    success_message = None
-    claims = None
-    user_info = None
-    gallery_list = []
+    error_message = None # session error messsage to display
+    success_message = None # session success messsage to display
+    claims = None # firebase auth object
+    user_info = None # basic user info
+    gallery_list = [] # list of all the galleries of the current user
 
-    session["gallery"] = None
+    session["gallery"] = None # used to determine if the requesting user is the owner
 
     if id_token:
         try:
@@ -96,6 +105,9 @@ def root():
     )
 
 
+# POST route to add a gallery
+# request form
+# gallery_name: user provided gallery name
 @app.route('/add_gallery', methods=['POST'])
 def addGalleryHandler():
     id_token = request.cookies.get("token")
@@ -117,6 +129,9 @@ def addGalleryHandler():
             session['error_message'] = str(exc)
     return redirect('/')
 
+# GET route to see the images in a gallery
+# expected args
+# gallery_name: name of the gallery that user clicks
 @app.route('/gallery')
 def gotoGallery():
     id_token = request.cookies.get("token")
@@ -197,6 +212,9 @@ def gotoGallery():
         
     )
 
+# Delete a gallery
+# request form
+# gallery_name: name of the gallery that the users whishes to delete
 @app.route('/delete_gallery', methods=['POST'])
 def deleteGalleryHandler():
     id_token = request.cookies.get("token")
@@ -225,6 +243,10 @@ def deleteGalleryHandler():
             session['error_message'] = str(exc)
     return redirect('/')
 
+# POST route to upload an image
+# request form
+# file_name: the uploaded image file
+# gallery_name: name of the gallery where the user wants to upload the image
 @app.route('/upload_file', methods=['post'])
 def uploadFileHandler():
     id_token = request.cookies.get("token")
@@ -269,6 +291,10 @@ def uploadFileHandler():
 
     return redirect('/gallery?gallery_name='+gallery_name)
 
+# POST route to delete an image
+# request form
+# file_path: the full path of the image file in the firebase storage
+# gallery_name: name of the gallery in which the image resides
 @app.route('/delete_file', methods=['post'])
 def deleteFileHandler():
     id_token = request.cookies.get("token")
@@ -277,8 +303,8 @@ def deleteFileHandler():
         try:
             claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
             
-            gallery_name = request.form['gallery_name']
             file_path = request.form['file_path']
+            gallery_name = request.form['gallery_name']
 
             if claims['user_id'] not in file_path or gallery_name == '':
                 session['error_message'] = "Invalid operation"
@@ -292,6 +318,9 @@ def deleteFileHandler():
 
     return redirect('/gallery?gallery_name='+gallery_name)
 
+# POST route to update user info
+# request form
+# name: name of the user
 @app.route('/edit_user_info', methods=['POST'])
 def editUserInfo():
     id_token = request.cookies.get("token")
@@ -307,6 +336,7 @@ def editUserInfo():
             session['error_message'] = str(exc)
     return redirect("/")
 
+# create userinfo in the google cloud data store
 def createUserInfo(claims):
     entity_key = datastore_client.key('UserInfo', claims['email'])
     entity = datastore.Entity(key = entity_key)
@@ -318,11 +348,13 @@ def createUserInfo(claims):
     datastore_client.put(entity)
     addDirectory(claims)
 
+# get user into from the google cloud data store provided the loggedin user's email
 def retrieveUserInfo(claims):
     entity_key = datastore_client.key('UserInfo', claims['email'])
     entity = datastore_client.get(entity_key)
     return entity
 
+# update the providded info in the google cloud data store userInfo entity
 def updateUserInfo(claims, new_name):
     entity_key = datastore_client.key('UserInfo', claims['email'])
     entity = datastore_client.get(entity_key)
@@ -332,36 +364,44 @@ def updateUserInfo(claims, new_name):
     })
     datastore_client.put(entity)
 
+# add a directory in the firebase storage named as the firebase user auth id for isolation
 def addDirectory(claims):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(claims['user_id']+"/")
     blob.upload_from_string('', content_type='application/x-www-formurlencoded;charset=UTF-8')
 
+# add a directory within the isolated user directory to prevent overlaping
 def addGallery(gallery_name, claims):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(claims['user_id']+"/"+gallery_name+"/")
     blob.upload_from_string('', content_type='application/x-www-formurlencoded;charset=UTF-8')
 
+# remove the provede directory i.e gallery
 def deleteGallery(gallery_name):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(gallery_name)
     blob.delete()
 
+# add a file to the firebase storage provided the whole path
+# convention:
+# <user_id>/<gallery_name>/<filename>
 def addFile(file, gallery_name, claims):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(claims['user_id']+"/"+gallery_name+"/"+file.filename)
     blob.upload_from_file(file)
 
+# delete the file from firebase storage provided the full path
 def deleteFile(file_name):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(file_name)
     blob.delete()
 
+# calculate the loggedin user's isolated directory size
 def getGallerySize(claims):
     storage_size = 0
 
@@ -378,10 +418,12 @@ def getGallerySize(claims):
 
     return storage_size
 
+# get the list of blobs residing in the firebase storage bucket
 def blobList(prefix):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     return storage_client.list_blobs(local_constants.PROJECT_STORAGE_BUCKET, prefix=prefix)
 
+# get the firebase storage bucket 
 def getBucket():
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
     bucket = storage_client.get_bucket(local_constants.PROJECT_STORAGE_BUCKET)
