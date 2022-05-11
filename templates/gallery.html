@@ -89,7 +89,7 @@
         {% if user_data %}
         <div class="card mb-3">
           <div class="card-body">
-            <h3 class="catd-title text-center">Login Info</h3>
+            <h3 class="catd-title">Login Info</h3>
             <p><strong>Name:</strong> {{ user_data['name'] }}</p>
             <p><strong>Email:</strong> {{ user_data['email'] }}</p>
             <button
@@ -175,25 +175,39 @@
         </div>
 
         <div class="row mb-3">
-          <!-- Create gallery Card -->
+          <!-- Upload Image Card -->
           <div class="col-12">
             <div class="card">
               <div class="card-body">
-                <h3 class="text-center">Create Gallery</h3>
-                <form action="/add_gallery" method="post" class="form-inline">
+                <h3>Upload Image</h3>
+                <form
+                  action="/upload_file"
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="form-inline"
+                >
                   <div class="form-group mb-2">
-                    <label>Gallery Name:</label>
+                    <label for="staticEmail2" class="sr-only"
+                      >Upload File</label
+                    >
                   </div>
-                  <div class="form-group mx-sm-3">
+                  <div class="form-group mx-sm-3 mb-2">
                     <input
-                      type="text"
-                      class="form-control"
+                      type="file"
+                      class="form-control-file"
+                      name="file_name"
+                      required
+                    />
+                    <input
+                      type="hidden"
+                      class="form-control-file"
                       name="gallery_name"
+                      value="{{gallery_name}}"
                       required
                     />
                   </div>
                   <button type="submit" class="btn btn-primary mb-2">
-                    Create
+                    Upload
                   </button>
                 </form>
               </div>
@@ -232,33 +246,47 @@
         </div>
         {% endif %}
 
-        <!-- Gallery List -->
-        <div class="card mb-3">
+        <!-- Images List -->
+        <div class="card">
           <div class="card-body">
-            <h3 class="text-center">Galleries</h3>
+            <div class="d-flex">
+              <div class="col">
+                <a href="/"> <i class="fa fa-arrow-left"></i> Back</a>
+              </div>
+              <div class="col">
+                <h3 class="text-center">{{gallery_name}}</h3>
+              </div>
+              <div class="col"></div>
+            </div>
             <div class="row justify-content-center">
-              {% if gallery_list|length > 0 %} {% for i in gallery_list %}
-              <div class="col-md-4 col-sm-6">
-                <a href="/gallery?gallery_name={{i.gallery_name}}">
-                  <div class="card">
-                    <div class="card-body text-center">
-                      <form action="/delete_gallery" method="post">
-                        <h3><i class="fa fa-folder"></i> {{i.gallery_name}}</h3>
-                        <input
-                          type="hidden"
-                          name="gallery_name"
-                          value="{{i.name}}"
-                        />
-                        <button class="btn btn-sm btn-danger">
-                          <i class="fa fa-trash"></i>
-                        </button>
-                      </form>
-                    </div>
+              {% if file_list|length > 0 %} {% for i in file_list %}
+              <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="card">
+                  <div class="card-body text-center">
+                    <form action="/delete_file" method="post">
+                      <img src="{{i.url}}" width="100%" />
+                      <p><strong> {{ i.file_name }} </strong></p>
+
+                      <input
+                        type="hidden"
+                        name="file_path"
+                        value="{{i.path}}"
+                      />
+                      <input
+                        type="hidden"
+                        name="gallery_name"
+                        value="{{gallery_name}}"
+                        required
+                      />
+                      <button class="btn btn-danger btn-sm" type="submit">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </form>
                   </div>
-                </a>
+                </div>
               </div>
               {% endfor %} {% else %}
-              <p>You have no galleries yet.</p>
+              <p>You have no images yet.</p>
               {% endif %}
             </div>
           </div>

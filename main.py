@@ -81,9 +81,9 @@ def root():
 
     return render_template(
         'index.html',
-        user_data=claims,
-        error_message=error_message,
-        success_message=success_message,
+        user_data=claims, 
+        error_message=error_message, 
+        success_message=success_message, 
         user_info=user_info,
         gallery_list=gallery_list
     )
@@ -110,6 +110,82 @@ def addGalleryHandler():
             session['error_message'] = str(exc)
     return redirect('/')
 
+@app.route('/gallery')
+def gotoGallery():
+    id_token = request.cookies.get("token")
+    error_message = None
+    success_message = None
+    claims = None
+    user_info = None
+    file_list = []
+
+    if id_token:
+        try:
+
+            gallery_name = request.args.get('gallery_name');
+
+            if len(gallery_name) == 0:
+                session['error_message'] = "Invalid gallery url"
+                return('/')
+
+            claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
+            
+            user_info = retrieveUserInfo(claims)
+
+            if user_info == None:
+                createUserInfo(claims)
+                user_info = retrieveUserInfo(claims)
+
+            blob_list = blobList(claims['user_id']+"/"+gallery_name)
+            bucket = getBucket()
+
+
+            for i in blob_list:
+                blob_path = i.name
+                blob = bucket.blob(blob_path)
+                print(blob)
+
+                # check if file or directory belongs to user
+                # valide file extension to be JPEG or PNG
+                split_tup = i.name.split('/')
+                print("SPLIT:", split_tup)
+
+                file_name = split_tup[len(split_tup)-1]
+                print("FILENAME:", file_name, i.name[len(i.name) - 1])
+                print("i.name", i.name)
+                print("=============================")
+
+                if len(file_name) > 0 and i.name[len(i.name) - 1] != '/':
+                    url = blob.generate_signed_url(datetime.timedelta(seconds=3600), method='GET') #for 1 hour
+                    file_list.append({
+                        "url": url,
+                        "file_name": file_name,
+                        "path": i.name
+                    })
+
+                if "error_message" in session:
+                    if session['error_message'] != None:
+                        error_message = session['error_message']
+                        session['error_message'] = None
+
+                if "success_message" in session:
+                    if session['success_message'] != None:
+                        success_message = session['success_message']
+                        session['success_message'] = None
+
+        except ValueError as exc:
+            error_message = str(exc)
+
+    return render_template(
+        'gallery.html',
+        user_data=claims, 
+        error_message=error_message, 
+        success_message=success_message, 
+        user_info=user_info, 
+        file_list=file_list,
+        gallery_name=gallery_name
+    )
+
 @app.route('/delete_directory', methods=['POST'])
 def deleteGalleryHandler():
     id_token = request.cookies.get("token")
@@ -134,6 +210,60 @@ def deleteGalleryHandler():
         except ValueError as exc:
             session['error_message'] = str(exc)
     return redirect('/')
+
+@app.route('/upload_file', methods=['post'])
+def uploadFileHandler():
+    id_token = request.cookies.get("token")
+    claims = None
+
+    if id_token:
+        try:
+            claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
+            file = request.files['file_name']
+            gallery_name = request.form['gallery_name']
+    
+            if file.filename == '' or gallery_name == '':
+                session['error_message'] = "Invalid gallery name"
+                return redirect('/')
+    
+            # valide file extension to be JPEG or PNG
+            split_tup = file.filename.split('.')
+            file_extension = split_tup[len(split_tup) -1].lower()
+            
+            if file_extension != 'jpeg' and file_extension != 'jpg' and file_extension != 'png':
+                session['error_message'] = "Invalid file type"
+                return redirect('/')
+
+            addFile(file, gallery_name, claims)
+            session['success_message'] = "Image uploaded"
+    
+        except ValueError as exc:
+            session['error_message'] = str(exc)
+
+    return redirect('/gallery?gallery_name='+gallery_name)
+
+@app.route('/delete_file', methods=['post'])
+def deleteFileHandler():
+    id_token = request.cookies.get("token")
+
+    if id_token:
+        try:
+            claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
+            
+            gallery_name = request.form['gallery_name']
+            file_path = request.form['file_path']
+
+            if claims['user_id'] not in file_path or gallery_name == '':
+                session['error_message'] = "Invalid operation"
+                return redirect('/gallery?gallery_name='+gallery_name)
+
+            deleteFile(file_path)
+            session['success_message'] = "Image deleted"
+        
+        except ValueError as exc:
+            session['error_message'] = str(exc)
+
+    return redirect('/gallery?gallery_name='+gallery_name)
 
 @app.route('/edit_user_info', methods=['POST'])
 def editUserInfo():
@@ -192,6 +322,24 @@ def deleteGallery(gallery_name):
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(gallery_name)
     blob.delete()
+
+def addFile(file, gallery_name, claims):
+    storage_client = storage.Client(project=local_constants.PROJECT_NAME)
+    bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
+    blob = bucket.blob(claims['user_id']+"/"+gallery_name+"/"+file.filename)
+    blob.upload_from_file(file)
+
+def deleteFile(file_name):
+    storage_client = storage.Client(project=local_constants.PROJECT_NAME)
+    bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
+    blob = bucket.blob(file_name)
+    blob.delete()
+
+def downloadBlob(filename):
+    storage_client = storage.Client(project=local_constants.PROJECT_NAME)
+    bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
+    blob = bucket.blob(filename)
+    return blob.download_as_bytes()
 
 def blobList(prefix):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
