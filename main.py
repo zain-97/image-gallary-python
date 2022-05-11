@@ -147,6 +147,7 @@ def gotoGallery():
             blob_list = blobList(claims['user_id']+"/"+gallery_name)
             bucket = getBucket()
 
+            storage_size = getGallerySize(claims)
 
             for i in blob_list:
                 blob_path = i.name
@@ -191,7 +192,9 @@ def gotoGallery():
         success_message=success_message, 
         user_info=user_info, 
         file_list=file_list,
-        gallery_name=gallery_name
+        gallery_name=gallery_name,
+        storage_size=storage_size
+        
     )
 
 @app.route('/delete_gallery', methods=['POST'])
@@ -232,10 +235,22 @@ def uploadFileHandler():
             claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
             file = request.files['file_name']
             gallery_name = request.form['gallery_name']
-    
+
+
+            blob = request.files['file_name'].read()
+            request.files['file_name'].seek(0)
+            size = len(blob)/1000/1000
+            gallery_size = getGallerySize(claims)
+
+            print("TOTAL AFTER UPLOAD:", size+gallery_size, "MB")
+
+            if size+gallery_size > 60:
+                session['error_message'] = "Storage size exceeded, please delete some images"
+                return redirect('/gallery?gallery_name='+gallery_name)
+
             if file.filename == '' or gallery_name == '':
                 session['error_message'] = "Invalid gallery name"
-                return redirect('/')
+                return redirect('/gallery?gallery_name='+gallery_name)
     
             # valide file extension to be JPEG or PNG
             split_tup = file.filename.split('.')
@@ -243,7 +258,7 @@ def uploadFileHandler():
             
             if file_extension != 'jpeg' and file_extension != 'jpg' and file_extension != 'png':
                 session['error_message'] = "Invalid file type"
-                return redirect('/')
+                return redirect('/gallery?gallery_name='+gallery_name)
 
             addFile(file, gallery_name, claims)
             session['success_message'] = "Image uploaded"
@@ -358,7 +373,7 @@ def getGallerySize(claims):
         storage_size = storage_size+blob.size
 
     storage_size = storage_size/1000000
-    storage_size = str(round(storage_size, 2))
+    storage_size = round(storage_size, 2)
 
     return storage_size
 
