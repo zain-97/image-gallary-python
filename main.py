@@ -49,37 +49,41 @@ def root():
                 createUserInfo(claims)
                 user_info = retrieveUserInfo(claims)
 
-            blob_list = blobList(None)
+            blob_list = blobList(claims['user_id'])
             bucket = getBucket()
+            storage_size = getGallerySize(claims)
+
             for i in blob_list:
                 blob_path = i.name
-                blob = bucket.blob(blob_path)
-                print(blob)
+                blob = bucket.get_blob(blob_path)
 
                 # check if file or directory belongs to user
                 # valide file extension to be JPEG or PNG
                 split_tup = i.name.split('/')
                 directory_prefix = split_tup[0]
 
-                print(split_tup, split_tup[len(split_tup)-1])
+                print(split_tup[len(split_tup)-1])
 
                 if directory_prefix == claims['user_id']:
                     if len(split_tup) > 2 and i.name[len(i.name) - 1] == '/':
                         i.gallery_name = split_tup[len(split_tup)-2]
                         gallery_list.append(i)
 
-                if "error_message" in session:
-                    if session['error_message'] != None:
-                        error_message = session['error_message']
-                        session['error_message'] = None
+                print("===================")
 
-                if "success_message" in session:
-                    if session['success_message'] != None:
-                        success_message = session['success_message']
-                        session['success_message'] = None
+            if "error_message" in session:
+                if session['error_message'] != None:
+                    error_message = session['error_message']
+                    session['error_message'] = None
 
+            if "success_message" in session:
+                if session['success_message'] != None:
+                    success_message = session['success_message']
+                    session['success_message'] = None
+                
         except ValueError as exc:
             error_message = str(exc)
+
 
     return render_template(
         'index.html',
@@ -87,7 +91,8 @@ def root():
         error_message=error_message, 
         success_message=success_message, 
         user_info=user_info,
-        gallery_list=gallery_list
+        gallery_list=gallery_list,
+        storage_size=storage_size
     )
 
 
@@ -248,7 +253,6 @@ def uploadFileHandler():
 
     return redirect('/gallery?gallery_name='+gallery_name)
 
-
 @app.route('/delete_file', methods=['post'])
 def deleteFileHandler():
     id_token = request.cookies.get("token")
@@ -341,6 +345,22 @@ def deleteFile(file_name):
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
     blob = bucket.blob(file_name)
     blob.delete()
+
+def getGallerySize(claims):
+    storage_size = 0
+
+    blob_list = blobList(claims['user_id']+"/")
+    bucket = getBucket()
+
+    for i in blob_list:
+        blob_path = i.name
+        blob = bucket.get_blob(blob_path)
+        storage_size = storage_size+blob.size
+
+    storage_size = storage_size/1000000
+    storage_size = str(round(storage_size, 2))
+
+    return storage_size
 
 def blobList(prefix):
     storage_client = storage.Client(project=local_constants.PROJECT_NAME)
