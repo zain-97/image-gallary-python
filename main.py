@@ -229,7 +229,8 @@ def deleteGalleryHandler():
 def uploadFileHandler():
     id_token = request.cookies.get("token")
     claims = None
-
+    MAX_STORAGE_SIZE=50
+    
     if id_token:
         try:
             claims = google.oauth2.id_token.verify_firebase_token(id_token, firebase_request_adapter)
@@ -244,7 +245,7 @@ def uploadFileHandler():
 
             print("TOTAL AFTER UPLOAD:", size+gallery_size, "MB")
 
-            if size+gallery_size > 60:
+            if size+gallery_size > MAX_STORAGE_SIZE:
                 session['error_message'] = "Storage size exceeded, please delete some images"
                 return redirect('/gallery?gallery_name='+gallery_name)
 
